@@ -43,7 +43,8 @@ private:
 	
 
 private:
-	cv::Rect findClostAndDel(const cv::Rect rect);	
+	cv::Rect findClostAndDel_Rects(const cv::Rect rect);
+	cv::Rect findClostAndDel_Objects(const cv::Rect rect);
 	double calculateRectDistance(const cv::Rect& rect1, const cv::Rect& rect2);
 
 };
