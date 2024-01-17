@@ -4,6 +4,10 @@
 using namespace std;
 using namespace cv;
 
+bool abandonFlag = false;
+
+
+void click_and_crop(int event, int x, int y, int flags, void* param);
 
 int main()
 {
@@ -21,6 +25,7 @@ int main()
     ObjectsTracker objectsTracker;
 
     cv::namedWindow("newFrame", cv::WINDOW_NORMAL);
+    cv::setMouseCallback("newFrame", click_and_crop);
     cv::resizeWindow("newFrame", cv::Size(800, 600));
 
     while (1)
@@ -32,12 +37,12 @@ int main()
         if (!newFrame.empty()) 
         {
             cv::Mat frame;
-            frame = objectsTracker.tracker(newFrame);
+            frame = objectsTracker.tracker(newFrame, abandonFlag);
 
 
             imshow("newFrame", frame);
 
-            int key = cv::waitKey(10);
+            int key = cv::waitKey(1);
             if (key == 27)
                 break;
 
@@ -48,3 +53,14 @@ int main()
         }
     }
 }
+
+
+// 鼠标回调函数
+void click_and_crop(int event, int x, int y, int flags, void* param) {
+    if (event == cv::EVENT_MBUTTONDOWN) 
+    {
+        abandonFlag = true;
+        std::cout << "cv::EVENT_FLAG_SHIFTKEY" << std::endl;
+    }
+}
+

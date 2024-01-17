@@ -8,6 +8,7 @@ class Object
 {
 public:
     int num;
+    bool isUpdate;
     int apper_times;
     int disap_times;
     cv::Rect rect;

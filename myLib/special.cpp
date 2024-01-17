@@ -65,12 +65,12 @@ void Special::ReinitKalmanFilter(cv::Rect newRect)
 
     // P 维度与状态向量的维度相同
     Eigen::MatrixXd initial_covariance = Eigen::MatrixXd(6, 6);
-    initial_covariance << 0.1, 0, 0, 0, 0, 0,     
-        0, 0.1, 0, 0, 0, 0,
-        0, 0, 0.1, 0, 0, 0,
-        0, 0, 0, 0.1, 0, 0,
-        0, 0, 0, 0, 0.1, 0,
-        0, 0, 0, 0, 0, 0.1;
+    initial_covariance << 0.001, 0, 0, 0, 0, 0,     
+        0, 0.001, 0, 0, 0, 0,
+        0, 0, 0.001, 0, 0, 0,
+        0, 0, 0, 0.001, 0, 0,
+        0, 0, 0, 0, 0.001, 0,
+        0, 0, 0, 0, 0, 0.001;
     
 
     // A
@@ -91,19 +91,19 @@ void Special::ReinitKalmanFilter(cv::Rect newRect)
 
     // Q
     Eigen::MatrixXd process_noise_covariance(6, 6);
-    process_noise_covariance << 0.1, 0, 0, 0, 0, 0,     
-        0, 0.1, 0, 0, 0, 0,
-        0, 0, 0.1, 0, 0, 0,
-        0, 0, 0, 0.1, 0, 0,
-        0, 0, 0, 0, 0.1, 0,
-        0, 0, 0, 0, 0, 0.1;
+    process_noise_covariance << 0.001, 0, 0, 0, 0, 0,     
+        0, 0.001, 0, 0, 0, 0,
+        0, 0, 0.001, 0, 0, 0,
+        0, 0, 0, 0.001, 0, 0,
+        0, 0, 0, 0, 0.001, 0,
+        0, 0, 0, 0, 0, 0.001;
 
     // R
     Eigen::MatrixXd measurement_noise_covariance(4, 4);
-    measurement_noise_covariance << 0.1, 0, 0, 0,      
-        0, 0.1, 0, 0,
-        0, 0, 0.1, 0,
-        0, 0, 0, 0.1;
+    measurement_noise_covariance << 0.001, 0, 0, 0,      
+        0, 0.001, 0, 0,
+        0, 0, 0.001, 0,
+        0, 0, 0, 0.001;
     
     kalman.initialize(initial_state, initial_covariance, transition_matrix,
                       measurement_matrix, process_noise_covariance, measurement_noise_covariance);
@@ -125,7 +125,15 @@ void Special::kalmanFilter(cv::Rect Rect)
 
     Eigen::VectorXd predicted_state = kalman.getState();
 
-    this->newRect = cv::Rect(predicted_state(0), predicted_state(1), predicted_state(2), predicted_state(3));
+    // 观测矩阵究竟是什么？
+    cv::Rect rect;
+    rect = cv::Rect(predicted_state(0) + predicted_state(4), predicted_state(1) + predicted_state(5), predicted_state(2), predicted_state(3));
+    //if (rect.x < 0) rect.x = 0;
+    //if (rect.y < 0) rect.y = 0;
+    //if (rect.width > 2560) rect.width = 2560;
+    //if (rect.height > 1440) rect.height = 1440;
+
+    this->newRect = rect;
 
 }
 
