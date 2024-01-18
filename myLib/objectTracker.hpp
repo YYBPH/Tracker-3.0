@@ -14,6 +14,7 @@ using namespace std;
 using namespace cv;
 
 #define MAX_DIST 100
+#define MAX_NUM	 500
 
 
 #define SPECIAL_DEBUG
@@ -23,7 +24,18 @@ using namespace cv;
 #define BLUE cv::Scalar(255, 0, 0)
 #define GREEN cv::Scalar(0, 255, 0)
 #define BLACK cv::Scalar(0, 0, 0)
+#define CYAN cv::Scalar(255, 255, 0)	// 青色
 
+
+
+struct TrackerParam
+{
+	cv::Mat newFrame;
+	int minSpeed;
+	int maxSpeed;
+	bool abandonFlag;
+	std::vector<cv::Rect> MaskRects;
+};
 
 
 
@@ -33,7 +45,7 @@ public:
 	ObjectsTracker();
 	~ObjectsTracker();
 
-	cv::Mat tracker(Mat newframe, bool& abandonFlag);
+	cv::Mat tracker(TrackerParam* trackerParamAddr);
 
 
 private:
@@ -49,17 +61,10 @@ private:
 	// 标志位
 	bool hasObjFlag;
 
-	// 阈值
-	double maxDist;
 
-
-	
 
 private:
-	//cv::Rect findClostAndDel(TypeFAD typeFAD,const cv::Rect rect);
-
 	cv::Rect findClostAndDel_Rects(const cv::Rect rect);
-	cv::Rect findClostAndDel_Objects(const cv::Rect rect);
 	cv::Rect findClostAndDel_Abandon(const cv::Rect rect);
 	double calculateRectDistance(const cv::Rect& rect1, const cv::Rect& rect2);
 

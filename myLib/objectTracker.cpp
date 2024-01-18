@@ -4,21 +4,21 @@
 Mat kernel_erode = (Mat_<uchar>(3, 3) <<  0, 1, 0,
                                           1, 0, 0,
                                           0, 0, 0);
+
+Mat kernel_dilate1 = (Mat_<uchar>(3, 3) << 0, 1, 0,
+                                          1, 0, 0,
+                                          0, 0, 0);
 // 膨胀内核
-Mat kernel_dilate = (Mat_<uchar>(5, 5) <<  1, 1, 1, 1, 1,
+Mat kernel_dilate2 = (Mat_<uchar>(5, 5) <<  1, 1, 1, 1, 1,
                                            1, 1, 1, 1, 1,
                                            1, 1, 1, 1, 1,
                                            1, 1, 1, 1, 1,
                                            1, 1, 1, 1, 1);
 
-unsigned long NUM = 0;
-
 ObjectsTracker::ObjectsTracker()
 {
     this->MOG2 = createBackgroundSubtractorMOG2();
     this->hasObjFlag = false;
-
-    this->maxDist = MAX_DIST;
 }
 
 ObjectsTracker::~ObjectsTracker()
@@ -26,15 +26,21 @@ ObjectsTracker::~ObjectsTracker()
     
 }
 
-cv::Mat ObjectsTracker::tracker(Mat newframe, bool& abandonFlag)
+cv::Mat ObjectsTracker::tracker(TrackerParam* trackerParamAddr)
 {
-    this->original_frame = newframe;
+    this->original_frame = trackerParamAddr->newFrame;
 
     /**** 1. rects  *************************************/
     Mat grayFrame, mog2MaskFrame, erodeFrame, dilateFrame;
-    this->MOG2->apply(newframe, mog2MaskFrame);
+    this->MOG2->apply(this->original_frame, mog2MaskFrame, 0.01);
     erode(mog2MaskFrame, erodeFrame, kernel_erode, Point(-1, -1), 1, cv::BORDER_CONSTANT, cv::Scalar(0));
      
+    /**** 1.5 屏蔽区  *************************************/
+    for (size_t i = 0; i < trackerParamAddr->MaskRects.size(); i++)
+    {
+        cv::rectangle(erodeFrame, trackerParamAddr->MaskRects[i], BLACK, -1);
+    }
+
     this->rects.clear();
     vector<vector<Point>> contours;
     findContours(erodeFrame, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
@@ -45,8 +51,6 @@ cv::Mat ObjectsTracker::tracker(Mat newframe, bool& abandonFlag)
         this->rects.push_back(rect);
     }
 
-#ifdef SPECIAL_DEBUG
-
     /** 2. 1号目标  *************************************/
     // 1号丢失处理 说明屏幕一个目标都没有，不用执行1号更新，切换命令
     if (this->hasObjFlag == false)
@@ -55,21 +59,23 @@ cv::Mat ObjectsTracker::tracker(Mat newframe, bool& abandonFlag)
         {
             if (this->objects[i].apper_times > 0)
             {
+                // 重置
                 hasObjFlag = true;
                 special.ReinitKalmanFilter(this->objects[i].rect);
                 // 删除
                 swap(this->objects[i], this->objects[this->objects.size() - 1]);
                 this->objects.pop_back();
                 printf("find special\r\n");
+                break;
             }
         }
     }
     else
     {
         // 1号切换处理
-        if (abandonFlag)
+        if (trackerParamAddr->abandonFlag)
         {
-            abandonFlag = false;
+            trackerParamAddr->abandonFlag = false;
             printf("abandoning...\r\n");
             cv::Rect rect = findClostAndDel_Abandon(this->special.newRect);
             if (rect.width != 0 && rect.height != 0)
@@ -86,7 +92,6 @@ cv::Mat ObjectsTracker::tracker(Mat newframe, bool& abandonFlag)
             else
                 printf("disabandoned\r\n");
         }
-
 
         // 1号更新
         cv::Rect rect = findClostAndDel_Rects(this->special.newRect);
@@ -109,7 +114,6 @@ cv::Mat ObjectsTracker::tracker(Mat newframe, bool& abandonFlag)
 
     }
 
-#endif
 
     /** 3. objects  *************************************/
     // 更新
@@ -130,13 +134,14 @@ cv::Mat ObjectsTracker::tracker(Mat newframe, bool& abandonFlag)
             // earse时间复杂度太高
             swap(objects[i], objects[objects.size() - 1]);
             objects.pop_back();
+            i--;
         }
     }
     // 新增
     for (size_t i = 0; i < this->rects.size(); i++)
     {
+        if (this->rects.size() > MAX_NUM) break;
         Object object;
-        object.num = NUM++;
         object.update(this->rects[i]);
         this->objects.push_back(object);
     }
@@ -152,25 +157,21 @@ cv::Mat ObjectsTracker::tracker(Mat newframe, bool& abandonFlag)
              cv::rectangle(this->original_frame, this->objects[i].rect, GREEN, 2);
 
         if (this->objects[i].num == -1)
-        {
-             cv::putText(original_frame, std::to_string(objects[i].num), cv::Point(objects[i].rect.x, objects[i].rect.y), cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2);
-
-             cv::rectangle(this->original_frame, this->objects[i].rect, BLACK, 8);
-         }
+            cv::rectangle(this->original_frame, this->objects[i].rect, BLACK, 2);         
 
     }
 
-#ifdef SPECIAL_DEBUG
     if (hasObjFlag)
         cv::rectangle(this->original_frame, this->special.newRect, RED, 2);
-#endif
+
+    for (size_t i = 0; i < trackerParamAddr->MaskRects.size(); i++)
+    {
+        cv::rectangle(this->original_frame, trackerParamAddr->MaskRects[i], CYAN, 2);
+    }
+
 
     return this->original_frame;
-    
-
-
-
-        //return this->original_frame;
+   
 
 }
 
@@ -194,7 +195,7 @@ cv::Rect ObjectsTracker::findClostAndDel_Rects(const cv::Rect rect)
         }
     }
 
-    if(clostDist < this->maxDist)
+    if(clostDist < MAX_DIST)
     {
         // earse时间复杂度太高
         swap(this->rects[index], this->rects[this->rects.size()-1]);
@@ -208,40 +209,6 @@ cv::Rect ObjectsTracker::findClostAndDel_Rects(const cv::Rect rect)
         return clostRect;
     }
 }
-
-// 在this->objects中找到最近的方框,返回并删除
-cv::Rect ObjectsTracker::findClostAndDel_Objects(const cv::Rect rect)
-{
-    double clostDist = DBL_MAX;
-    Rect clostRect;
-
-    int index = -1;
-    for (size_t i = 0; i < this->objects.size(); i++)
-    {
-        double dist = calculateRectDistance(rect, this->objects[i].rect);
-        if (dist < clostDist)
-        {
-            index = i;
-            clostDist = dist;
-            clostRect = this->objects[i].rect;
-        }
-    }
-
-    if (clostDist < this->maxDist)
-    {
-        // earse时间复杂度太高
-        swap(this->objects[index], this->objects[this->objects.size() - 1]);
-        this->objects.pop_back();
-        return clostRect;
-    }
-    else
-    {
-        clostRect.width = 0;
-        clostRect.height = 0;
-        return clostRect;
-    }
-}
-
 
 
 cv::Rect ObjectsTracker::findClostAndDel_Abandon(const cv::Rect rect)
