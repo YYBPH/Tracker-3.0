@@ -5,7 +5,7 @@ using namespace std;
 using namespace cv;
 
 
-struct TrackerParam trackerParam;
+struct TrackerParam trackerParam ;
 
 
 int frameWidth = -1;
@@ -16,8 +16,8 @@ void click_and_crop(int event, int x, int y, int flags, void* param);
 int main()
 {
     cv::VideoCapture cap;
-    //cap.open("E:\\Desktop\\test1.mp4");
-    cap.open(1);
+    cap.open("E:\\Desktop\\test1.mp4");
+    //cap.open(1);
     cap.set(cv::CAP_PROP_FRAME_WIDTH, 1920);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 1080);
 
@@ -56,6 +56,7 @@ int main()
         {
             trackerParam.newFrame = newFrame;
             cv::Mat frame = objectsTracker.tracker(&trackerParam);
+            cv::Point point = objectsTracker.getCoords();
 
             // 结束计时
             endTime = cv::getTickCount();
@@ -81,26 +82,24 @@ cv::Rect MaskRectsDel;
 
 // 鼠标回调函数
 void click_and_crop(int event, int x, int y, int flags, void* param) {
+    //最大速度调节：滚轮
+    bool MAX_SPEED_FLAG = (event == cv::EVENT_MOUSEWHEEL);
+    //最低速度调节：ctrl+滚轮
+    bool MIN_SPEED_FLAG = (event == cv::EVENT_MOUSEWHEEL) && (flags & cv::EVENT_FLAG_CTRLKEY);
 
     if (event == cv::EVENT_LBUTTONDOWN) {
         if (x < 20) x = 0;
         if (y < 20) y = 0;
         trackerParam.MaskRects.push_back(cv::Rect(x, y, 0, 0));
-    }
-
-    else if (event == cv::EVENT_LBUTTONUP) {
+    } else if (event == cv::EVENT_LBUTTONUP) {
         trackerParam.MaskRects.back().width = x - trackerParam.MaskRects.back().x;
         trackerParam.MaskRects.back().height = y - trackerParam.MaskRects.back().y;
 
         if (frameWidth - x < 20) trackerParam.MaskRects.back().width = frameWidth;
         if (frameHeight - y < 20) trackerParam.MaskRects.back().height = frameHeight;
-    }
-
-    else if (event == cv::EVENT_RBUTTONDOWN) {
+    } else if (event == cv::EVENT_RBUTTONDOWN) {
         MaskRectsDel = cv::Rect(x, y, 0, 0);
-    }
-
-    else if (event == cv::EVENT_RBUTTONUP) {
+    } else if (event == cv::EVENT_RBUTTONUP) {
         MaskRectsDel.width = x - MaskRectsDel.x;
         MaskRectsDel.height = y - MaskRectsDel.y;
 
@@ -125,13 +124,40 @@ void click_and_crop(int event, int x, int y, int flags, void* param) {
                 i--;
             }
         }
-    }
-
-    else if (event == cv::EVENT_MBUTTONDOWN)
+    } else if (event == cv::EVENT_MBUTTONDOWN)
     {
         trackerParam.abandonFlag = true;
         std::cout << "cv::EVENT_FLAG_SHIFTKEY" << std::endl;
     }
+    else if (MIN_SPEED_FLAG) {
+        int delta = cv::getMouseWheelDelta(flags);
+        if (delta > 0) {
+            trackerParam.minSpeed++;
+            std::cout << "Mouse wheel scrolled up." << std::endl;
+        }
+        else if (delta < 0) {
+            if (trackerParam.minSpeed > 0) {
+                trackerParam.minSpeed--;
+            }
+
+            std::cout << "Mouse wheel scrolled down." << std::endl;
+        }
+    }
+    else if (MAX_SPEED_FLAG) {
+        int delta = cv::getMouseWheelDelta(flags);
+        if (delta > 0) {
+            trackerParam.maxSpeed++;
+            std::cout << "Mouse wheel scrolled up." << std::endl;
+        }
+        else if (delta < 0) {
+            if (trackerParam.maxSpeed > 0) {
+                trackerParam.maxSpeed--;
+            }
+
+            std::cout << "Mouse wheel scrolled down." << std::endl;
+        }
+    }
+
 }
 
 

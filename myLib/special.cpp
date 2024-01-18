@@ -51,6 +51,7 @@ Special::Special()
     kalman.initialize(initial_state, initial_covariance, transition_matrix,
                       measurement_matrix, process_noise_covariance, measurement_noise_covariance);
               
+    this->speed = -1.0;
     this->disap_times = 0;
 }
 
@@ -108,8 +109,8 @@ void Special::ReinitKalmanFilter(cv::Rect newRect)
     kalman.initialize(initial_state, initial_covariance, transition_matrix,
                       measurement_matrix, process_noise_covariance, measurement_noise_covariance);
               
+    this->speed = -1.0;
     this->disap_times = 0;
-
 }
 
 void Special::kalmanFilter(cv::Rect Rect)
@@ -127,7 +128,7 @@ void Special::kalmanFilter(cv::Rect Rect)
 
     cv::Rect rect;
     rect = cv::Rect(predicted_state(0), predicted_state(1), predicted_state(2), predicted_state(3));
-
+    this->speed = sqrt(predicted_state(4) * predicted_state(4) + predicted_state(5) * predicted_state(5));
     this->newRect = rect;
 
 }

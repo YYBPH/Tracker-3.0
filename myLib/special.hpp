@@ -15,9 +15,10 @@ public:
 	Special();
 	~Special();
 
-    MyKalmanFilter kalman;
-	cv::Rect newRect;  
+	double speed;
 	int disap_times;
+	cv::Rect newRect;  
+    MyKalmanFilter kalman;
 
 
 	void ReinitKalmanFilter(cv::Rect newRect);

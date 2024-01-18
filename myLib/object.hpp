@@ -11,6 +11,9 @@ public:
     int apper_times;
     int disap_times;
     cv::Rect rect;
+
+    double speed;
+    cv::Rect lastRect;
     
     Object();
     ~Object();
