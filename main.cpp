@@ -16,7 +16,7 @@ void click_and_crop(int event, int x, int y, int flags, void* param);
 int main()
 {
     cv::VideoCapture cap;
-    cap.open(0);
+    cap.open(1);
     cap.set(cv::CAP_PROP_FRAME_WIDTH, 1920);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 1080);
     //cap.open("E:\\Desktop\\test1.mp4");
@@ -40,9 +40,14 @@ int main()
     cv::resizeWindow("newFrame", cv::Size(800, 600));
 
     ObjectsTracker objectsTracker;
+    double startTime, endTime, totalTime;
 
     while (1)
     {   
+        // 开始计时
+        startTime = cv::getTickCount();
+
+
         // 获取新图像
         Mat newFrame;
         cap >> newFrame;
@@ -52,7 +57,10 @@ int main()
             trackerParam.newFrame = newFrame;
             cv::Mat frame = objectsTracker.tracker(&trackerParam);
 
-
+            // 结束计时
+            endTime = cv::getTickCount();
+            double fps = 1.0 / ((endTime - startTime) / cv::getTickFrequency());
+            printf("FPS:%f\r\n", fps);
 
             imshow("newFrame", frame);
             int key = cv::waitKey(1);
