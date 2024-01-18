@@ -5,15 +5,15 @@ Mat kernel_erode = (Mat_<uchar>(3, 3) <<  0, 1, 0,
                                           1, 0, 0,
                                           0, 0, 0);
 
-Mat kernel_dilate1 = (Mat_<uchar>(3, 3) << 0, 1, 0,
-                                          1, 0, 0,
-                                          0, 0, 0);
-// 膨胀内核
-Mat kernel_dilate2 = (Mat_<uchar>(5, 5) <<  1, 1, 1, 1, 1,
-                                           1, 1, 1, 1, 1,
-                                           1, 1, 1, 1, 1,
-                                           1, 1, 1, 1, 1,
-                                           1, 1, 1, 1, 1);
+Mat kernel_dilate = (Mat_<uchar>(3, 3) << 1, 1, 1,
+                                           1, 1, 1,
+                                           1, 1, 1);
+//// 膨胀内核
+//Mat kernel_dilate2 = (Mat_<uchar>(5, 5) <<  1, 1, 1, 1, 1,
+//                                           1, 1, 1, 1, 1,
+//                                           1, 1, 1, 1, 1,
+//                                           1, 1, 1, 1, 1,
+//                                           1, 1, 1, 1, 1);
 
 ObjectsTracker::ObjectsTracker()
 {
@@ -34,7 +34,8 @@ cv::Mat ObjectsTracker::tracker(TrackerParam* trackerParamAddr)
     Mat grayFrame, mog2MaskFrame, erodeFrame, dilateFrame;
     this->MOG2->apply(this->original_frame, mog2MaskFrame, 0.01);
     erode(mog2MaskFrame, erodeFrame, kernel_erode, Point(-1, -1), 1, cv::BORDER_CONSTANT, cv::Scalar(0));
-     
+    //dilate(erodeFrame, dilateFrame, kernel_dilate, Point(-1, -1), 1, cv::BORDER_CONSTANT, cv::Scalar(0));
+
     /**** 1.5 屏蔽区  *************************************/
     for (size_t i = 0; i < trackerParamAddr->MaskRects.size(); i++)
     {

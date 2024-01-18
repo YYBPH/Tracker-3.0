@@ -125,13 +125,8 @@ void Special::kalmanFilter(cv::Rect Rect)
 
     Eigen::VectorXd predicted_state = kalman.getState();
 
-    // 观测矩阵究竟是什么？
     cv::Rect rect;
-    rect = cv::Rect(predicted_state(0) + predicted_state(4), predicted_state(1) + predicted_state(5), predicted_state(2), predicted_state(3));
-    //if (rect.x < 0) rect.x = 0;
-    //if (rect.y < 0) rect.y = 0;
-    //if (rect.width > 2560) rect.width = 2560;
-    //if (rect.height > 1440) rect.height = 1440;
+    rect = cv::Rect(predicted_state(0), predicted_state(1), predicted_state(2), predicted_state(3));
 
     this->newRect = rect;
 
