@@ -127,7 +127,7 @@
     <ClCompile Include="mylib\object.cpp" />
     <ClCompile Include="mylib\objectTracker.cpp" />
     <ClCompile Include="mylib\special.cpp" />
-    <ClCompile Include="special2.cpp" />
+    <ClCompile Include="objectsTracker-cuda.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="eigen\src\cholesky\LDLT.h" />
@@ -441,7 +441,6 @@
     <ClInclude Include="mylib\object.hpp" />
     <ClInclude Include="mylib\objectTracker.hpp" />
     <ClInclude Include="mylib\special.hpp" />
-    <ClInclude Include="special2.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

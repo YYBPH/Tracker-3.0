@@ -7,7 +7,6 @@
 
 // #include "Special.hpp"
 #include "special.hpp"
-#include "special2.hpp"
 #include "object.hpp"
 
 using namespace std;
