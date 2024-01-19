@@ -227,6 +227,13 @@ cv::Point ObjectsTracker::getCoords()
     return cv::Point(this->special.newRect.x, this->special.newRect.y);
 }
 
+bool ObjectsTracker::getFlag() const
+{
+    if (hasObjFlag == true) 
+        return true;
+    else
+        return false;
+}
 
 
 // 在this->rects中找到最近的方框,返回并删除

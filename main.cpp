@@ -168,10 +168,13 @@ void TrackerThread()
             strcpy(reciveBuf, coordinate_conversion_X((double)point.x-1280.0, 720.0-(double)point.y));
             myserial1.writeBuffer((uint8_t*)reciveBuf, strlen(reciveBuf));
             printf("X:%s ", reciveBuf);
-
             strcpy(reciveBuf, coordinate_conversion_Y((double)point.x-1280.0, 720.0-(double)point.y));
             myserial2.writeBuffer((uint8_t*)reciveBuf, strlen(reciveBuf));
             printf("Y:%s \r\n", reciveBuf);
+
+            // 输出
+            if(objectsTracker.getFlag) GPIO::setup(outputPin, GPIO::OUT, GPIO::HIGH);
+            else GPIO::setup(outputPin, GPIO::OUT, GPIO::LOW);
 
 
             // 结束计时
