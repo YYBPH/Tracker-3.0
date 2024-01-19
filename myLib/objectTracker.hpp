@@ -35,7 +35,7 @@ struct TrackerParam
 	int minSpeed = 0;
 	int maxSpeed = 20;
 	bool abandonFlag = false;
-	double learnSpeed = 0.01;
+	int learnSpeed = 0.01;
 	std::vector<cv::Rect> MaskRects;
 };
 

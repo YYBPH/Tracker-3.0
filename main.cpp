@@ -1,24 +1,49 @@
 #include <opencv2/opencv.hpp>
+#include <deque>
+#include <thread>
+#include <mutex>
+#include <atomic>
+
 #include "objectTracker.hpp"
 
 using namespace std;
 using namespace cv;
 
 
+/** serial ****************************/
+char reciveBuf[10]{};
+char return_msg[20]{};
+
+/** cap ****************************/
+cv::VideoCapture cap;
 int frameWidth = -1;
 int frameHeight = -1;
 
 struct TrackerParam trackerParam;
 
+
+
+/** 多线程 ****************************/
+
+deque<cv::Mat> frameDeque(5);
+std::atomic<bool>  BREAK_FLAG = { false };
+mutex frameMutex, flagMutex;
+
+/** 函数声明 ****************************/
+void GetFrameThread();
+void TrackerThread();
+
+char* coordinate_conversion_X(double x, double y);
+char* coordinate_conversion_Y(double x, double y);
 void click_and_crop(int event, int x, int y, int flags, void* param);
 
 int main()
 {
-    cv::VideoCapture cap;
-    //cap.open("E:\\Desktop\\test1.mp4");
+
+    // cap.open("/home/nvidia/Desktop/testVideo.mp4");
     cap.open(0);
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, 1920);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 1080);
+    cap.set(cv::CAP_PROP_FRAME_WIDTH, 2560);
+    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 1440);
 
     if (cap.isOpened() == false) {
         printf("\r\n\r\n**************************************************************\r\n");
@@ -27,6 +52,7 @@ int main()
         return 0;
     }
 
+
     cv::Mat testFrame;
     cap >> testFrame;
     frameWidth = testFrame.cols;
@@ -34,27 +60,73 @@ int main()
     printf("\r\n\r\nFrame:%d*%d\r\n\r\n", frameWidth, frameHeight);
 
 
+    std::thread getFrameThread(GetFrameThread);
+    std::thread trackerThread(TrackerThread);
+
+    getFrameThread.join();
+    trackerThread.join();
+
+    printf("\r\n\r\n**************************************************************\r\n");
+    printf("programe end.\r\n");
+    printf("*************************************************************\r\n\r\n\r\n");
+
+}
+
+
+void GetFrameThread()
+{
+    while (!BREAK_FLAG)
+    {
+        cv::Mat newFrame;
+        cap >> newFrame;
+
+        frameMutex.lock();
+        while (frameDeque.size() >= 3)
+            frameDeque.pop_front();
+        frameDeque.push_back(newFrame);
+        frameMutex.unlock();
+    }
+}
+
+
+void TrackerThread()
+{
     cv::namedWindow("newFrame", cv::WINDOW_NORMAL);
     cv::setMouseCallback("newFrame", click_and_crop);
     cv::resizeWindow("newFrame", cv::Size(800, 600));
+    cv::createTrackbar("learn speed", "newFrame", &(trackerParam.learnSpeed), 30);
 
     ObjectsTracker objectsTracker;
     double startTime, endTime, totalTime;
 
-    while (1)
+    while (!BREAK_FLAG)
     {
         // 开始计时
         startTime = cv::getTickCount();
 
         // 获取新图像
-        Mat newFrame;
-        cap >> newFrame;
+        cv::Mat newFrame;
+        frameMutex.lock();
+        if (!frameDeque.empty())
+        {
+            newFrame = frameDeque.back();
+            frameDeque.pop_back();
+        }
+        frameMutex.unlock();
 
         if (!newFrame.empty())
         {
             trackerParam.newFrame = newFrame;
             cv::Mat frame = objectsTracker.tracker(&trackerParam);
+
+
             cv::Point point = objectsTracker.getCoords();
+            strcpy(reciveBuf, coordinate_conversion_X((double)point.x - 1280.0, 720.0 - (double)point.y));
+            printf("X:%s ", reciveBuf);
+
+            strcpy(reciveBuf, coordinate_conversion_Y((double)point.x - 1280.0, 720.0 - (double)point.y));
+            printf("Y:%s \r\n", reciveBuf);
+
 
             // 结束计时
             endTime = cv::getTickCount();
@@ -63,19 +135,55 @@ int main()
 
             imshow("newFrame", frame);
             int key = cv::waitKey(1);
+
             if (key == 27)
+            {
+                BREAK_FLAG = true;
                 break;
+            }
 
         }
         else {
             cout << "Empty frame!" << endl;
-            return 0;
         }
     }
+
 }
 
 
 
+
+char* coordinate_conversion_X(double x, double y) {
+    // 1920*1080:
+    // 2560*1440: 1828
+    double R = 1828.0;
+
+    // atan返回弧度
+    double alpha_level = atan(x / sqrt(R * R + y * y));
+    // left:145     right:215
+    alpha_level = ((alpha_level / 3.14159 * 180) + 145.0) / 360 * 16383;
+
+    sprintf(return_msg, "RB%05d  ", int(alpha_level));
+    // printf("X: %s  ", return_msg);
+
+    return return_msg;
+}
+
+char* coordinate_conversion_Y(double x, double y) {
+    double R = 1828.0;
+
+    // sin函数输入弧度
+    double _buf = sin(18.0 / 180.0 * 3.1415926 + atan(y / R));
+    double alpha_vertical = asin((sqrt(R * R + y * y) * _buf) / sqrt(x * x + y * y + R * R));
+
+    // 弧度转角度，再转码
+    alpha_vertical = ((alpha_vertical / 3.14159 * 180.0) + 180.0) / 360.0 * 16383;
+
+    sprintf(return_msg, "RB%05d  ", int(alpha_vertical));
+    // printf("Y: %s  \n", return_msg);
+
+    return return_msg;
+}
 
 // 鼠标回调函数
 cv::Rect MaskRectsDel;
