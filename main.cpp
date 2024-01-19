@@ -131,6 +131,9 @@ void GetFrameThread()
 void TrackerThread()
 {
     printf("TrackerThread start!\r\n");
+    
+    // 延迟1秒
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     cv::namedWindow("newFrame", cv::WINDOW_NORMAL);
     cv::setMouseCallback("newFrame", click_and_crop);
