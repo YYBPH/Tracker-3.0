@@ -91,6 +91,9 @@ void GetFrameThread()
 
 void TrackerThread()
 {
+    // 延迟1秒
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
     cv::namedWindow("newFrame", cv::WINDOW_NORMAL);
     cv::setMouseCallback("newFrame", click_and_crop);
     cv::resizeWindow("newFrame", cv::Size(800, 600));
@@ -143,9 +146,9 @@ void TrackerThread()
             }
 
         }
-        else {
-            cout << "Empty frame!" << endl;
-        }
+        //else {
+        //    cout << "Empty frame!" << endl;
+        //}
     }
 
 }
