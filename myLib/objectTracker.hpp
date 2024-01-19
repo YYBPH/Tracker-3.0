@@ -49,6 +49,7 @@ public:
 
 	cv::Mat tracker(TrackerParam* trackerParamAddr);
 	cv::Point getCoords();
+	bool getFlag() const;
 
 private:
     Ptr<BackgroundSubtractorMOG2> MOG2;
