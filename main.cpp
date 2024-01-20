@@ -81,7 +81,7 @@ void GetFrameThread()
         cap >> newFrame;
 
         frameMutex.lock();
-        while (frameDeque.size() >= 3)
+        while (frameDeque.size() >= 3)          // 修改
             frameDeque.pop_front();
         frameDeque.push_back(newFrame);
         frameMutex.unlock();
@@ -100,13 +100,11 @@ void TrackerThread()
     cv::createTrackbar("learn speed", "newFrame", &(trackerParam.learnSpeed), 30);
 
     ObjectsTracker objectsTracker;
-    double startTime, endTime, totalTime;
+    double startTime = 0.0, endTime = 0.0, totalTime = 0.0;
 
     while (!BREAK_FLAG)
     {
-        // 开始计时
-        startTime = cv::getTickCount();
-
+        
         // 获取新图像
         cv::Mat newFrame;
         frameMutex.lock();
@@ -135,6 +133,9 @@ void TrackerThread()
             endTime = cv::getTickCount();
             double fps = 1.0 / ((endTime - startTime) / cv::getTickFrequency());
             printf("FPS:%f\r\n", fps);
+
+            // 开始计时
+            startTime = cv::getTickCount();
 
             imshow("newFrame", frame);
             int key = cv::waitKey(1);
